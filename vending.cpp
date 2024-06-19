@@ -1,0 +1,85 @@
+#include <Wire.h>                                 // Include Wire.h library to connect the LCD to Arduino
+#include <LiquidCrystal_I2C.h>                    // Include LiquidCrystal_I2C.h library to control LCD
+#include <Servo.h>                                // Include Servo.h library to control servo motors
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);               // Initialize LCD with address 0x27 for 16 columns and 2 rows
+
+Servo sm1, sm2, sm3;                              // Declare servos for products
+Servo scoin;                                      // Declare servo for handling coins
+
+void setup() {
+  lcd.init();                                     // Initialize the LCD
+  lcd.backlight();                                // Turn on the backlight
+
+  sm1.attach(11);                                 // Attach servo motors to their respective pins
+  sm2.attach(10);
+  sm3.attach(9);
+  scoin.attach(5);
+
+  pinMode(8, INPUT);                              // Set pin modes for sensors
+  pinMode(7, INPUT);
+  pinMode(4, INPUT);
+
+  pinMode(13, INPUT);                             //coin checker
+
+  pinMode(A0, INPUT);                             // Set pin modes for auto return push buttons
+  pinMode(A1, INPUT);
+  pinMode(A2, INPUT);
+}
+
+void loop() {
+  while (true) {                                  // Add a while(true) loop to continuously reset the process
+    lcd.setCursor(4, 0);
+    lcd.print("WELCOME");
+    lcd.setCursor(1, 1);
+    lcd.print("ENTER A COIN");
+
+    while (digitalRead(13) != LOW) {
+      delay(100);  // Polling delay for coin sensor
+    }
+
+    lcd.clear();
+    lcd.print("SELECT ITEM");
+
+    int choice = 0;
+    while (choice == 0) {
+      if (digitalRead(A0) == HIGH) choice = 1;
+      if (digitalRead(A1) == HIGH) choice = 2;
+      if (digitalRead(A2) == HIGH) choice = 3;
+    }
+
+    lcd.clear();
+    delay(700);
+
+    int p1 = digitalRead(8) == LOW ? 1 : 0;
+    int p2 = digitalRead(7) == LOW ? 1 : 0;
+    int p3 = digitalRead(4) == LOW ? 1 : 0;
+
+    if (choice == 1 && p1) {
+      rotateServo360(sm1);
+    } else if (choice == 2 && p2) {
+      rotateServo360(sm2);
+    } else if (choice == 3 && p3) {
+      rotateServo360(sm3);
+    } else {
+      lcd.print("NOT AVAILABLE");
+      lcd.setCursor(0, 1);
+      lcd.print("REFUNDING...");
+      scoin.write(75 - 40);
+      delay(1000);
+      scoin.write(75);
+    }
+
+    lcd.clear();
+    delay(1000);  // Clear the display and delay of 1 second before restarting the loop
+  }
+}
+
+void rotateServo360(Servo servo) {
+  servo.writeMicroseconds(1500 - 290);  // Speed for rotation
+  delay(3000);                          // Time to complete 360 degrees, adjust as necessary
+  servo.writeMicroseconds(1500);       // Stop the servo
+  scoin.write(75 + 40);
+  delay(1000);
+  scoin.write(75);
+}
